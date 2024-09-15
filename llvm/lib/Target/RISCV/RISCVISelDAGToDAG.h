@@ -57,6 +57,8 @@ public:
   bool SelectAddrRegRegScale(SDValue Addr, unsigned MaxShiftAmount,
                              SDValue &Base, SDValue &Index, SDValue &Scale);
 
+  bool SelectAddrBaseIndex(SDValue Addr, SDValue &Base, SDValue &Index);
+  
   template <unsigned MaxShift>
   bool SelectAddrRegRegScale(SDValue Addr, SDValue &Base, SDValue &Index,
                              SDValue &Scale) {

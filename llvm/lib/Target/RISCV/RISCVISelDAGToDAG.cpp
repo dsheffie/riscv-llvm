@@ -2823,6 +2823,19 @@ bool RISCVDAGToDAGISel::SelectAddrRegImmLsb00000(SDValue Addr, SDValue &Base,
   return true;
 }
 
+bool RISCVDAGToDAGISel::SelectAddrBaseIndex(SDValue Addr, SDValue &Base,
+				      SDValue &Index) {
+  if (Addr.getOpcode() != ISD::ADD)
+    return false;
+
+  if (isa<ConstantSDNode>(Addr.getOperand(1)))
+    return false;
+  
+  Base = Addr.getOperand(1);
+  Index = Addr.getOperand(0);
+  return true;
+}
+
 bool RISCVDAGToDAGISel::SelectAddrRegReg(SDValue Addr, SDValue &Base,
                                          SDValue &Offset) {
   if (Addr.getOpcode() != ISD::ADD)

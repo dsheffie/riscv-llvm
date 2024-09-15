@@ -514,6 +514,17 @@ class BranchCC_rri<bits<3> funct3, string opcodestr>
 }
 
 let hasSideEffects = 0, mayLoad = 1, mayStore = 0 in {
+class Load_rr<bits<7> funct7, string opcodestr>
+    : RVInstR<funct7, 0b100, OPC_CUSTOM_0, (outs GPR:$rd), (ins GPR:$rs1, GPR:$rs2),
+              opcodestr, "$rd, (${rs1} + ${rs2})"> {
+  let AddedComplexity = 20;
+}
+}
+
+
+
+
+let hasSideEffects = 0, mayLoad = 1, mayStore = 0 in {
 class Load_ri<bits<3> funct3, string opcodestr>
     : RVInstI<funct3, OPC_LOAD, (outs GPR:$rd), (ins GPRMem:$rs1, simm12:$imm12),
               opcodestr, "$rd, ${imm12}(${rs1})">;
@@ -635,6 +646,7 @@ let IsSignExtendingOpW = 1 in {
 def LB  : Load_ri<0b000, "lb">, Sched<[WriteLDB, ReadMemBase]>;
 def LH  : Load_ri<0b001, "lh">, Sched<[WriteLDH, ReadMemBase]>;
 def LW  : Load_ri<0b010, "lw">, Sched<[WriteLDW, ReadMemBase]>;
+def LWX : Load_rr<0b0000010, "lwx">, Sched<[WriteLDW, ReadMemBase]>;
 def LBU : Load_ri<0b100, "lbu">, Sched<[WriteLDB, ReadMemBase]>;
 def LHU : Load_ri<0b101, "lhu">, Sched<[WriteLDH, ReadMemBase]>;
 }
@@ -746,10 +758,24 @@ def CSRRCI : CSR_ii<0b111, "csrrci">;
 
 /// RV64I instructions
 
+def AddrBaseIndex : ComplexPattern<iPTR, 2, "SelectAddrBaseIndex">;
+
+multiclass LdIdxPat_<PatFrag LoadOp, RVInst Inst, ValueType vt = XLenVT> {
+def : Pat<(vt (LoadOp (AddrBaseIndex (XLenVT GPR:$rs1), (XLenVT GPR:$rs2)))),
+          (Inst GPR:$rs1, GPR:$rs2)>;
+}
+
+
 let Predicates = [IsRV64] in {
 def LWU   : Load_ri<0b110, "lwu">, Sched<[WriteLDW, ReadMemBase]>;
+def LWUX  : Load_rr<0b0000110, "lwux">, Sched<[WriteLDW, ReadMemBase]>;
 def LD    : Load_ri<0b011, "ld">, Sched<[WriteLDD, ReadMemBase]>;
+def LDX   : Load_rr<0b0000011, "ldx">, Sched<[WriteLDD, ReadMemBase]>;
 def SD    : Store_rri<0b011, "sd">, Sched<[WriteSTD, ReadStoreData, ReadMemBase]>;
+
+defm : LdIdxPat_<load, LDX, i64>;
+defm : LdIdxPat_<sextloadi32, LWX, i64>;
+
 
 let IsSignExtendingOpW = 1 in {
 let hasSideEffects = 0, mayLoad = 0, mayStore = 0 in
